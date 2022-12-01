@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -47,12 +48,38 @@ class _MyHomePageState extends State<MyHomePage> {
   // Declare Controller , Toolbar , editor and custom buttons
   // and define them in the 'initState' function
   late QuillController _controller;
+  late TextSelection textSelection;
+  late FocusNode _focusNode;
   late Widget ToolBar;
   late Widget Editor;
 
-  late var saveCustomButton;
+  late QuillCustomButton saveCustomButton;
+  late QuillCustomButton openCustomButton;
 
-  late var openCustomButton;
+  //custom font sizes and family
+  //important to add them here to be able to use them in the app
+  final Map<String, String> fontSizes = {
+    "very small": "8",
+    "small": "12",
+    "medium": "16",
+    "large": "20",
+    "very large": "24",
+    'Clear': '0'
+  };
+
+  final Map<String, String> fontFamily = {
+    'noto-nask': 'noto-nask',
+    'Sans Serif': 'sans-serif',
+    'Serif': 'serif',
+    'Monospace': 'monospace',
+    'Ibarra Real Nova': 'ibarra-real-nova',
+    'SquarePeg': 'square-peg',
+    'Nunito': 'nunito',
+    'Pacifico': 'pacifico',
+    'Roboto Mono': 'roboto-mono',
+    'Clear': 'Clear'
+  };
+
   //pick files from from the drive
   Future<String?> openFileSystemPickerForDesktop(BuildContext context) async {
     final result = await FilePicker.platform.pickFiles();
@@ -81,7 +108,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     final fileData = File(result.files.first.path!).readAsStringSync();
     final doc = Document.fromJson(jsonDecode(fileData.toString()));
-
     setState(() {
       _controller.document = doc;
     });
@@ -111,10 +137,20 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _controller = QuillController.basic();
 
-    saveCustomButton =
-        QuillCustomButton(icon: Icons.save, onTap: () => _onSaveFile());
+    setState(() {
+      final doc = Document()..insert(0, '');
+      _controller = QuillController(
+          document: doc,
+          keepStyleOnNewLine: true,
+          selection: const TextSelection.collapsed(offset: 0));
+    });
+    _focusNode = FocusNode();
+    saveCustomButton = QuillCustomButton(
+        icon: Icons.save,
+        onTap: () {
+          _onSaveFile();
+        });
 
     openCustomButton =
         QuillCustomButton(icon: Icons.folder, onTap: () => _onOpenFile());
@@ -128,12 +164,25 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       customButtons: [saveCustomButton, openCustomButton],
       showAlignmentButtons: true,
+      showHeaderStyle: true,
+      showFontFamily: true,
+      showFontSize: true,
+      showClearFormat: true,
+      fontSizeValues: fontSizes,
+      fontFamilyValues: fontFamily,
     );
 
-    Editor = QuillEditor.basic(
+    Editor = QuillEditor(
+      scrollController: ScrollController(),
+      scrollable: true,
+      focusNode: _focusNode,
+      autoFocus: false,
+      expands: true,
+      padding: const EdgeInsets.all(10),
       controller: _controller,
       embedBuilders: FlutterQuillEmbeds.builders(),
       readOnly: false,
+      placeholder: "Add Content",
     );
   }
 
