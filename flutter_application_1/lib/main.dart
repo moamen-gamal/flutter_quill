@@ -91,12 +91,9 @@ class _MyHomePageState extends State<MyHomePage> {
     return file.path;
   }
 
-  // defines the behaviour when picking an image
+  // defines the behaviour when picking an image(parse the image into the json data as base 64 string)
   Future<String> _onImagePickCallback(File file) async {
-    final appDocDir = await getApplicationDocumentsDirectory();
-    final copiedFile =
-        await file.copy('${appDocDir.path}/${basename(file.path)}');
-    return copiedFile.path.toString();
+    return base64Encode(file.readAsBytesSync());
   }
 
   // function to open file and is related to the open file button
@@ -146,14 +143,17 @@ class _MyHomePageState extends State<MyHomePage> {
           selection: const TextSelection.collapsed(offset: 0));
     });
     _focusNode = FocusNode();
+
     saveCustomButton = QuillCustomButton(
         icon: Icons.save,
         onTap: () {
           _onSaveFile();
         });
-
-    openCustomButton =
-        QuillCustomButton(icon: Icons.folder, onTap: () => _onOpenFile());
+    openCustomButton = QuillCustomButton(
+        icon: Icons.folder,
+        onTap: () {
+          _onOpenFile();
+        });
 
     ToolBar = QuillToolbar.basic(
       controller: _controller,
@@ -170,9 +170,11 @@ class _MyHomePageState extends State<MyHomePage> {
       showClearFormat: true,
       fontSizeValues: fontSizes,
       fontFamilyValues: fontFamily,
+      afterButtonPressed: _focusNode.requestFocus,
     );
 
     Editor = QuillEditor(
+      enableSelectionToolbar: true,
       scrollController: ScrollController(),
       scrollable: true,
       focusNode: _focusNode,
